@@ -1,3 +1,5 @@
+require 'socket'
+
 ##
 # Cross platform MAC address determination.
 #
@@ -8,89 +10,68 @@
 # To return an array of all MAC addresses:
 #
 #   Mac.addresses
-
-begin
-  require 'rubygems'
-rescue LoadError
-  nil
-end
-
-require 'socket'
-
 module Mac
-  VERSION = '1.7.1'
+  extend self
 
-  def Mac.version
-    ::Mac::VERSION
+  # @return [String] First hardware address,
+  #         in no particular order (varies by system)
+  def address
+    addresses.first
   end
 
-  def Mac.dependencies
-    {
-    }
+  # @return [Array<String>] All hardware address,
+  #         in no particular order (varies by system)
+  def addresses
+    iface_macs.values.compact || []
   end
 
-  def Mac.description
-    'cross platform mac address determination for ruby'
+  alias_method :mac_address, :address
+  alias_method :addr, :address
+  alias_method :addrs, :addresses
+ 
+  # @return [Array<Ifaddr>] Return all interface Ifaddrs
+  def ifaddrs
+    return unless Socket.respond_to? :getifaddrs
+    Socket.getifaddrs.select do |iface|
+      iface.addr && iface.addr.pfamily == INTERFACE_PACKET_FAMILY
+    end
+  end
+ 
+  # @return [Hash<String,[String,nil]>]
+  #          all interfaces as keys, values are MAC addresses ((if present)
+  def iface_macs
+    h = iface_macs_raw.map do |k, v|
+      [k, (v != EMPTY_MAC && !v.empty?) ? v : nil]
+    end
+    Hash[h]
   end
 
+  private
+ 
+  INTERFACE_PACKET_FAMILY = Socket::PF_LINK rescue (Socket::PF_PACKET)
+  EMPTY_MAC = '00:00:00:00:00:00'
+  HWADDR_REGEX = /hwaddr=([\h:]+)/
 
-  class << self
-
-    ##
-    # Accessor for the system's first MAC address, requires a call to #address
-    # first
-
-    attr_accessor "mac_address"
-
-    ##
-    # Discovers and returns the system's MAC addresses.  Returns the first
-    # MAC address, and includes an accessor #list for the remaining addresses:
-    #
-    #   Mac.addr # => first address
-    #   Mac.addrs # => all addresses
-
-    def address
-      @mac_address ||= addresses.first
+  def iface_macs_raw
+    if Socket.const_defined? :PF_LINK
+      from_getnameinfo
+    else
+      from_inspect_sockaddr
     end
-
-    def addresses
-      @mac_addresses ||= from_getifaddrs || []
+  end
+ 
+  def from_getnameinfo
+    ifaddrs.map do |iface|
+      mac = iface.addr.getnameinfo[0]
+      [iface.name, mac]
     end
-
-    link   = Socket::PF_LINK   if Socket.const_defined? :PF_LINK
-    packet = Socket::PF_PACKET if Socket.const_defined? :PF_PACKET
-    INTERFACE_PACKET_FAMILY = link || packet # :nodoc:
-
-    ##
-    # Shorter aliases for #address and #addresses
-
-    alias_method "addr", "address"
-    alias_method "addrs", "addresses"
-
-    private
-
-    def from_getifaddrs
-      return unless Socket.respond_to? :getifaddrs
-
-      interfaces = Socket.getifaddrs.select do |addr|
-        addr.addr && addr.addr.pfamily == INTERFACE_PACKET_FAMILY
-      end
-
-      if Socket.const_defined? :PF_LINK then
-        interfaces.map do |addr|
-          addr.addr.getnameinfo
-        end.flatten.select do |m|
-          !m.empty?
-        end
-      elsif Socket.const_defined? :PF_PACKET then
-        interfaces.map do |addr|
-          addr.addr.inspect_sockaddr[/hwaddr=([\h:]+)/, 1]
-        end.select do |mac_addr|
-          mac_addr != '00:00:00:00:00:00'
-        end
-      end
+  end
+ 
+  def from_inspect_sockaddr
+    ifaddrs.map do |iface|
+      mac = iface.addr.inspect_sockaddr[HWADDR_REGEX, 1]
+      [iface.name, mac]
     end
-
   end
 end
 
