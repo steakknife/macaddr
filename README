@@ -16,6 +16,9 @@ INSTALL
   gem install macaddr
 
 HISTORY
+  Even newer:
+    - #ifaddrs - list all Ifaddr's
+    - #iface_macs - Hash with all interfaces to mac addresses
   New:
     - Get rid of systemu, only use Ruby's Socket.getifaddrs
     - Actually implement array of all macs as #addrs
