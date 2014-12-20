@@ -8,12 +8,27 @@ DESCRIPTION
 
 URI
 
+  http://github.com/steakknife/macaddr
+
+  (previously)
   http://github.com/ahoward/macaddr
   http://rubyforg.org/projects/codeforpeople
 
 INSTALL
 
-  gem install macaddr
+  cd ${TMPDIR-/tmp}
+  git clone https://github.com/steakknife/macaddr
+  cd macaddr
+  gem build *.gemspec
+  gem install *.gem
+
+Install Gemfile 1.9+
+  
+  gem 'macaddr', git: 'https://github.com/steakknife/macaddr.git'
+  
+Install Gemfile 1.8+
+
+  gem 'macaddr', git => 'https://github.com/steakknife/macaddr.git'
 
 HISTORY
   Even newer:
