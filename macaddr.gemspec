@@ -10,7 +10,6 @@ Gem::Specification::new do |spec|
 ["Gemfile",
  "LICENSE",
  "README",
- "Rakefile",
  "lib/macaddr.rb",
  "macaddr.gemspec",
 ]
