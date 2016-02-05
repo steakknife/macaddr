@@ -12,6 +12,11 @@ require 'socket'
 #   Mac.addresses
 module Mac
   extend self
+  VERSION = '1.7.2'
+
+  def Mac.version
+    ::Mac::VERSION
+  end
 
   # @return [String] First hardware address,
   #         in no particular order (varies by system)
