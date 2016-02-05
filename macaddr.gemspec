@@ -19,5 +19,5 @@ Gem::Specification::new do |spec|
   spec.rubyforge_project = "codeforpeople"
   spec.author = "Ara T. Howard"
   spec.email = "ara.t.howard@gmail.com"
-  spec.homepage = "https://github.com/steakknife/macaddr"
+  spec.homepage = "https://github.com/logicallabs/macaddr"
 end
