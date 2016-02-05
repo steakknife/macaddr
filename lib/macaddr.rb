@@ -22,7 +22,7 @@ module Mac
   # @return [Array<String>] All hardware address,
   #         in no particular order (varies by system)
   def addresses
-    addresses = iface_macs.values.compact || []
+    iface_macs.values.compact || []
   end
 
   alias_method :mac_address, :address
