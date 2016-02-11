@@ -123,7 +123,7 @@ module Mac
           nil
         else
           mac = filter_mac(line)
-          [name, mac] if !name.nil? && !mac.empty?
+          [name, mac.first] if !name.nil? && !mac.empty?
         end
       end
       .compact
