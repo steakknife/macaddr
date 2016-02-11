@@ -14,6 +14,7 @@ Gem::Specification::new do |spec|
  "README",
  "lib/macaddr.rb",
  "lib/macaddr/version.rb",
+ "lib/which.rb",
  "macaddr.gemspec",
 ]
 
