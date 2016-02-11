@@ -35,7 +35,7 @@ module Mac
   def ifaddrs
     return [] if !Socket.respond_to?(:getifaddrs) || iface_packet_family.nil?
     Socket.getifaddrs.select do |iface|
-      next unless iface.addr && iface.addr.respond_to(:pfamily)
+      next unless iface.addr && iface.addr.respond_to?(:pfamily)
       iface.addr.pfamily == iface_packet_family
     end
   end
