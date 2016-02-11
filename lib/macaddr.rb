@@ -33,44 +33,52 @@ module Mac
  
   # @return [Array<Ifaddr>] Return all interface Ifaddrs
   def ifaddrs
-    return [] if !Socket.respond_to?(:getifaddrs) || INTERFACE_PACKET_FAMILY.nil?
-    Socket.getifaddrs.select { |iface| iface.addr && iface.addr.pfamily == INTERFACE_PACKET_FAMILY }
+    return [] if !Socket.respond_to?(:getifaddrs) || iface_packet_family.nil?
+    Socket.getifaddrs.select { |iface| iface.addr && iface.addr.pfamily == iface_packet_family }
   end
  
   # @return [Hash<String,[String,nil]>]
   #          all interfaces as keys, values are MAC addresses ((if present)
   def iface_macs
     h = iface_macs_raw.map do |k, v|
-      v = nil if v.empty? || v !~ EXACT_MAC_REGEX || v =~ EMPTY_MAC
+      v = nil unless valid_mac? v
       [k, v]
     end
     Hash[h]
   end
 
-  INTERFACE_PACKET_FAMILY = [:PF_LINK, :PF_PACKET].map { |c| Socket.const_defined?(c) && Socket.const_get(c) }.first
   EMPTY_MAC = /00(?:[^\h]?00){5}(?:[^\h]?00){2}?/.freeze
   HWADDR_REGEX = /hwaddr=([\h:]+)/.freeze
   WINDOWS_REGEX = /win(32|dows|ce)|(ms|cyg|bcc)win|mingw32|djgpp/i.freeze
-  WINDOWS = RbConfig::CONFIG["host_os"] =~ WINDOWS_REGEX || RUBY_PLATFORM =~ WINDOWS_REGEX || ENV['OS'] == 'Windows_NT'
   # EUI48 and EUI64
   LOOSE_MAC_REGEX = /\h\h(?:[^\h]\h\h){5}(?:[^\h]\h\h){2}?/.freeze
   EXACT_MAC_REGEX = /\A#{LOOSE_MAC_REGEX}\z/.freeze
 
-
   private
 
+  def valid_mac?(s)
+    !s.nil? && !s.empty? && s =~ EXACT_MAC_REGEX && s != EMPTY_MAC
+  end
+
+  def windows?
+    @windows ||= RbConfig::CONFIG["host_os"] =~ WINDOWS_REGEX || RUBY_PLATFORM =~ WINDOWS_REGEX || ENV['OS'] == 'Windows_NT'
+  end
+
+  def iface_packet_family
+    @iface_packet_family ||= (Socket::PF_LINK if defined? Socket::PF_LINK) || (Socket::PF_PACKET if defined? Socket::PF_PACKET)
+  end
+
   def iface_macs_raw
-    if Socket.const_defined? :PF_LINK
+    if defined? Socket::PF_LINK
       from_getnameinfo
-    elsif Socket.const_defined? :PF_PACKET
+    elsif defined? Socket::PF_PACKET
       from_inspect_sockaddr
-    elsif WINDOWS
+    elsif windows?
       for_windows
     else
       from_ifconfig
     end
   end
-
   
   def for_windows
     from_ipconfig || from_getmac
@@ -140,6 +148,6 @@ module Mac
   def from_inspect_sockaddr
     ifaddrs.map { |iface| mac = iface.addr.inspect_sockaddr[HWADDR_REGEX, 1]; [iface.name, mac] }
   end
-end
+end # Mac
 
 MacAddr = Macaddr = Mac
