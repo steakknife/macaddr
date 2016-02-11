@@ -34,7 +34,10 @@ module Mac
   # @return [Array<Ifaddr>] Return all interface Ifaddrs
   def ifaddrs
     return [] if !Socket.respond_to?(:getifaddrs) || iface_packet_family.nil?
-    Socket.getifaddrs.select { |iface| iface.addr && iface.addr.pfamily == iface_packet_family }
+    Socket.getifaddrs.select do |iface|
+      next unless iface.addr && iface.addr.respond_to(:pfamily)
+      iface.addr.pfamily == iface_packet_family
+    end
   end
  
   # @return [Hash<String,[String,nil]>]
