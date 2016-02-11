@@ -77,14 +77,18 @@ module Mac
   end
   
   def clean(arg)
-    arg.delete('"')
+    arg.delete('"') unless arg.nil?
   end
   
   def from_getmac 
     return [] unless Which.which 'getmac'
     %x{getmac /fo CSV /nh}
       .split(/\n/)
-      .collect { |interface| mac, name = interface.split(/,/); [ clean(name), clean(mac) ] }
+      .collect do |interface|
+        mac, name = interface.split(/,/)
+        name, mac = clean(name), clean(mac)
+        [name, mac] if !name.nil?
+      end
       .compact
   end
 
