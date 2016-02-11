@@ -112,15 +112,15 @@ module Mac
       .scan(LOOSE_MAC_REGEX)                              # mac address(es)
   end
 
-  def from_ifconfig
+  def from_cmd(cmd, name_regex, mac_regex=nil)
     name = nil
-    %x{ifconfig}
+    %x{#{cmd}}
       .split(/\n/)
       .collect do |line|
-        if line =~ /\A([^:\s]+):.*\z/
+        if line =~ name_regex
           name = clean($1)
           nil
-        elsif line =~ /(?:ether|HWaddr)\s+/
+        elsif mac_regex.nil? || line =~ mac_regex
           mac = filter_mac(line)
           [name, mac.first] if !name.nil? && !mac.empty?
         end
@@ -128,20 +128,12 @@ module Mac
       .compact
   end
 
+  def from_ifconfig
+    from_cmd('ifconfig', /\A([^:\s]+):.*\z/, /(?:ether|HWaddr)\s+/)
+  end
+
   def from_ipconfig
-    name = nil
-    %x{ipconfig /all}
-      .split(/\n/)
-      .collect do |line|
-        if line =~ /\A[^:]+\s*adapter\s*([^:]+):\z/
-          name = clean($1)
-          nil
-        else
-          mac = filter_mac(line)
-          [name, mac.first] if !name.nil? && !mac.empty?
-        end
-      end
-      .compact
+    from_cmd('ipconfig /all', /\A[^:]+\s*adapter\s*([^:]+):\z/)
   end
  
   def from_getnameinfo
